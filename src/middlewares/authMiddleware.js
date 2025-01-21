@@ -13,6 +13,7 @@ exports.authenticateToken = async (req, res, next) => {
         }
 
         const client = await verifyAccessToken(token);
+        console.log("Client ID from token:", client); // Debug: log `clientId
         req.client = client;  // Attach client info to request
         next();
     } catch (error) {

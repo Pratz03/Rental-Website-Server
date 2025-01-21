@@ -29,8 +29,8 @@ exports.loginClient = async (username, password) => {
         await clientDbConnection.connect();
 
         //jwt authentication
-        const accessToken = generateAccessToken(client);
-        const refreshToken = generateRefreshToken(client);
+        const accessToken = generateAccessToken(client.client_id);
+        const refreshToken = generateRefreshToken(client.client_id);
         
         // For now, let's just close the connection after logging in.
         await clientDbConnection.end();
