@@ -1,4 +1,3 @@
-// Fetch product_fields from settings_table
 exports.getProductFields = async (dbClient) => {
   try {
     const result = await dbClient.query(
@@ -10,7 +9,6 @@ exports.getProductFields = async (dbClient) => {
   }
 };
 
-// Dynamically create products table
 exports.createProductsTable = async (dbClient, productFields) => {
   try {
     let createTableQuery = `CREATE TABLE IF NOT EXISTS products_table (
@@ -28,8 +26,6 @@ exports.createProductsTable = async (dbClient, productFields) => {
   }
 };
 
-// Insert product data into products table
-// Insert product data into products table
 exports.insertProduct = async (dbClient, productData) => {
   try {
     const insertColumns = Object.keys(productData);
@@ -133,97 +129,130 @@ exports.fetchFilters = async (dbClient) => {
 
 exports.getFilteredProducts = async (dbClient, filters) => {
   try {
-      const conditions = [];
-      const values = [];
-      let index = 1;
+    const conditions = [];
+    const values = [];
+    let index = 1;
 
-      // Build the dynamic WHERE clause based on the filters
-      for (const [key, filter] of Object.entries(filters)) {
-          if (Array.isArray(filter)) {
-              // Handle array filters with the ANY operator
-              conditions.push(`${key} = ANY($${index})`);
-              values.push(filter);
-          } else if (typeof filter === "object" && filter.min !== undefined && filter.max !== undefined) {
-              // Handle range filters with BETWEEN
-              conditions.push(`${key} BETWEEN $${index} AND $${index + 1}`);
-              values.push(filter.min, filter.max);
-              index++; // Increment index for the second value
-          } else {
-              // Handle single equality filters
-              conditions.push(`${key} = $${index}`);
-              values.push(filter);
-          }
-          index++;
+    // Build the dynamic WHERE clause based on the filters
+    for (const [key, filter] of Object.entries(filters)) {
+      if (Array.isArray(filter)) {
+        // Handle array filters with the ANY operator
+        conditions.push(`${key} = ANY($${index})`);
+        values.push(filter);
+      } else if (
+        typeof filter === "object" &&
+        filter.min !== undefined &&
+        filter.max !== undefined
+      ) {
+        // Handle range filters with BETWEEN
+        conditions.push(`${key} BETWEEN $${index} AND $${index + 1}`);
+        values.push(filter.min, filter.max);
+        index++; // Increment index for the second value
+      } else {
+        // Handle single equality filters
+        conditions.push(`${key} = $${index}`);
+        values.push(filter);
       }
-
-      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-      const query = `SELECT * FROM products_table ${whereClause}`;
-
-      const { rows } = await dbClient.query(query, values);
-      return rows;
-  } catch (error) {
-      throw new Error("Error retrieving products: " + error.message);
-  }
-};
-
-exports.searchAndFilterProducts = async (dbClient, filterConditions, searchTerm, filterValues) => {
-  try {
-    // Step 1: Fetch column names dynamically excluding product_id and booking_status
-    const columnQuery = `
-      SELECT column_name, data_type
-      FROM information_schema.columns
-      WHERE table_name = 'products_table' AND column_name NOT IN ('product_id', 'booking_status');
-    `;
-    const columnsResult = await dbClient.query(columnQuery);
-    
-    // Store dynamic columns and their types (can be expanded)
-    const columnDetails = columnsResult.rows;
-
-    // Step 2: Start with basic query where TRUE is the default condition
-    let query = `SELECT * FROM products_table WHERE TRUE`;
-    const values = [...filterValues];  // Include initial filter values
-
-    let index = values.length + 1;  // Placeholders start here for filters
-
-    // Step 3: Add dynamic filter conditions based on passed parameters
-    filterConditions.forEach(({ column, value, dataType }) => {
-      // Add filter logic based on data type
-      const columnType = columnDetails.find(col => col.column_name === column)?.data_type.toUpperCase() || 'TEXT';
-      
-      if (columnType === 'TEXT' || columnType === 'VARCHAR') {
-        query += ` AND ${column} ILIKE $${index}`;  // Handle case-insensitive match for TEXT type
-      } else if (columnType === 'INTEGER' || columnType === 'NUMERIC') {
-        query += ` AND ${column} = $${index}`;  // Handle number columns
-      } else if (columnType === 'DATE' || columnType === 'TIMESTAMP') {
-        query += ` AND ${column} = $${index}`;  // Handle date columns
-      }
-      values.push(value); // Append filter value for this condition
       index++;
-    });
-
-    // Step 4: Add search term if provided
-    if (searchTerm) {
-      const searchClauses = columnDetails.map((column, idx) => {
-        if (column.data_type === 'TEXT' || column.data_type === 'VARCHAR') {
-          return `(${column.column_name} ILIKE $${index + idx})`;
-        }
-        return `(${column.column_name}::TEXT ILIKE $${index + idx})`; // Cast to TEXT for comparison in search
-      });
-
-      query += ` AND (${searchClauses.join(' OR ')})`;  // Combine multiple OR clauses for searching across columns
-      values.push(...new Array(columnDetails.length).fill(`%${searchTerm}%`));
-      index += columnDetails.length;  // Update index for placeholders
     }
 
-    // Step 5: Execute the query with dynamic conditions
-    const result = await dbClient.query(query, values);
-    return result.rows;
+    const whereClause =
+      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const query = `SELECT * FROM products_table ${whereClause}`;
+
+    const { rows } = await dbClient.query(query, values);
+    return rows;
   } catch (error) {
-    throw new Error("Error searching and filtering products: " + error.message);
+    throw new Error("Error retrieving products: " + error.message);
   }
 };
 
+exports.searchProducts = async (dbClient, searchQuery) => {
+  try {
+    // Step 1: Fetch the dynamic column names from products_table
+    const columnsResult = await dbClient.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'products_table' 
+        AND column_name NOT IN ('product_id', 'booking_status');
+    `);
 
+    const columnNames = columnsResult.rows.map((row) => row.column_name);
 
+    if (columnNames.length === 0) {
+      throw new Error("No searchable columns found in products_table.");
+    }
 
+    // Step 2: Construct SQL based on the presence of searchQuery
+    let searchSQL = `SELECT * FROM products_table`;
+    const values = [];
 
+    if (searchQuery && searchQuery.trim() !== "") {
+      const conditions = columnNames
+        .map((column) => `${column}::TEXT ILIKE $1`) // Convert to TEXT and use case-insensitive search
+        .join(" OR ");
+      searchSQL += ` WHERE ${conditions}`;
+      values.push(`%${searchQuery}%`);
+    }
+
+    // Execute the search query
+    const result = await dbClient.query(searchSQL, values);
+
+    return result.rows;
+  } catch (error) {
+    throw new Error("Error searching products: " + error.message);
+  }
+};
+
+exports.deleteProduct = async (dbClient, productId) => {
+  try {
+    // SQL query to delete the product based on product_id
+    const deleteQuery = `DELETE FROM products_table WHERE product_id = $1 RETURNING *;`;
+    const result = await dbClient.query(deleteQuery, [productId]);
+
+    // Check if the product was deleted (RETURNING will be empty if not)
+    if (result.rowCount === 0) {
+      throw new Error("Product not found or already deleted.");
+    }
+
+    return result.rows[0]; // Return the deleted product's details
+  } catch (error) {
+    throw new Error("Error deleting product: " + error.message);
+  }
+};
+
+exports.updateProduct = async (dbClient, productId, updateData) => {
+  try {
+    // Generate SQL for updating dynamic columns
+    const updateColumns = Object.keys(updateData)
+      .map((key, index) => `${key} = $${index + 2}`) // Start placeholders from $2
+      .join(", ");
+
+    if (!updateColumns) {
+      throw new Error("No data provided to update the product.");
+    }
+
+    // Prepare SQL query
+    const updateQuery = `
+      UPDATE products_table
+      SET ${updateColumns}
+      WHERE product_id = $1
+      RETURNING *;
+    `;
+
+    // Prepare values for query (start with productId and then the rest)
+    const values = [productId, ...Object.values(updateData)];
+
+    // Execute query
+    const result = await dbClient.query(updateQuery, values);
+
+    // Check if product was updated
+    if (result.rowCount === 0) {
+      throw new Error("No product found with the given ID.");
+    }
+
+    return result.rows[0];
+  } catch (error) {
+    throw new Error("Error updating product: " + error.message);
+  }
+};

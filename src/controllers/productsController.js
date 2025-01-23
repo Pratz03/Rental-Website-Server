@@ -1,14 +1,18 @@
 const {
-  productModel,
+  getProductFields,
+  createProductsTable,
+  insertProduct,
   fetchFilters,
   getFilteredProducts,
-  searchAndFilterProducts,
+  searchProducts,
+  deleteProduct,
+  updateProduct
 } = require("../models/productsModel");
 
 exports.addProduct = async (req, res) => {
   try {
     // Step 1: Fetch product_fields from settings_table
-    const productFields = await productModel.getProductFields(req.db);
+    const productFields = await getProductFields(req.db);
 
     if (!productFields || productFields.length === 0) {
       return res
@@ -17,10 +21,10 @@ exports.addProduct = async (req, res) => {
     }
 
     // Step 2: Dynamically create the table if it doesn't exist
-    await productModel.createProductsTable(req.db, productFields);
+    await createProductsTable(req.db, productFields);
 
     // Step 3: Insert user-provided data into the products table
-    const result = await productModel.insertProduct(req.db, req.body);
+    const result = await insertProduct(req.db, req.body);
 
     // Step 4: Send success response
     res.status(200).json({
@@ -66,50 +70,78 @@ exports.getFilteredProducts = async (req, res) => {
   }
 };
 
-exports.searchAndFilterProducts = async (req, res) => {
+exports.searchProducts = async (req, res) => {
   try {
-    const filters = req.query; // Extract query parameters for filtering and searching
-    let { search, ...productFilters } = filters; // Extract the search and filters
-    const searchTerm = search || ""; // Default to empty if not provided
+    const { search } = req.query; // Fetch search parameter if provided
 
-    // Initialize the dynamic filter conditions
-    const filterConditions = [];
-    const filterValues = [];
-
-    // Step 1: Build dynamic filters from params (dataType logic handled in model)
-    for (let key in productFilters) {
-      if (productFilters[key]) {
-        const filterColumn = key;
-        const filterValue = productFilters[key];
-
-        // Example: Determine column type, but you can add other logic for different columns
-        const dataType = "TEXT"; // Adjust logic for getting data type (e.g., 'INTEGER', 'DATE')
-        filterConditions.push({
-          column: filterColumn,
-          value: filterValue,
-          dataType,
-        });
-        filterValues.push(filterValue); // Collect filter values for query
-      }
-    }
-
-    // Step 2: Search and filter products based on model logic
-    const products = await searchAndFilterProducts(
-      req.db,
-      filterConditions,
-      searchTerm,
-      filterValues
-    );
+    // Fetch products based on search
+    const products = await searchProducts(req.db, search);
 
     res.status(200).json({
-      message: "Filtered and searched products retrieved successfully.",
+      message: "Products fetched successfully.",
       products,
     });
   } catch (error) {
-    console.error("Error in searchAndFilterProducts:", error);
+    console.error("Error in searchProducts:", error.message);
     res.status(500).json({
-      message: "Error filtering and searching products.",
+      message: "Error fetching products.",
       error: error.message,
     });
   }
 };
+
+exports.deleteProduct = async (req, res) => {
+  try {
+    const { productId } = req.params; // Extract productId from route parameters
+
+    if (!productId) {
+      return res.status(400).json({
+        message: "Product ID is required.",
+      });
+    }
+
+    // Call the model to delete the product
+    const deletedProduct = await deleteProduct(req.db, productId);
+
+    res.status(200).json({
+      message: "Product deleted successfully.",
+      product: deletedProduct,
+    });
+  } catch (error) {
+    console.error("Error in deleteProduct:", error.message);
+    res.status(500).json({
+      message: "Error deleting product.",
+      error: error.message,
+    });
+  }
+};
+
+exports.updateProduct = async (req, res) => {
+  try {
+    const { product_id } = req.params; // Fetch product ID from route params
+    const updateData = req.body; // Data to update comes from the request body
+
+    if (!product_id) {
+      return res.status(400).json({ message: "Product ID is required." });
+    }
+
+    if (!updateData || Object.keys(updateData).length === 0) {
+      return res.status(400).json({ message: "No update data provided." });
+    }
+
+    // Update the product
+    const updatedProduct = await updateProduct(req.db, product_id, updateData);
+
+    res.status(200).json({
+      message: "Product updated successfully.",
+      product: updatedProduct,
+    });
+  } catch (error) {
+    console.error("Error in updateProduct:", error.message);
+    res.status(500).json({
+      message: "Error updating product.",
+      error: error.message,
+    });
+  }
+};
+
