@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 
 // Generate an access token with an expiration time (e.g., 15 seconds).
 exports.generateAccessToken = (clientId) => {
-    return jwt.sign({ id: clientId }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15s' });
+    return jwt.sign({ id: clientId }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '3h' });
 };
 
 // Generate an access token with no expiration time (not recommended for production).

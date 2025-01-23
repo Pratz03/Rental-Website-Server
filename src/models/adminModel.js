@@ -34,22 +34,22 @@ exports.addClient = async (username, password, databaseName) => {
         await clientDbConnection.connect();
 
         // Create the `company_info` table
-        await clientDbConnection.query(`
-            CREATE TABLE company_info (
-                id SERIAL PRIMARY KEY,
-                logo BYTEA,
-                company_name VARCHAR(255) NOT NULL,
-                primary_color VARCHAR(7) NOT NULL,
-                secondary_color VARCHAR(7) NOT NULL,
-                text_light VARCHAR(7),
-                text_dark VARCHAR(7),
-                company_address TEXT NOT NULL,
-                email_address VARCHAR(255) UNIQUE,
-                phone_number VARCHAR(15) UNIQUE,
-                company_description TEXT
-            );
-        `);
-        console.log(`Table 'company_info' created in database ${databaseName}.`);
+        // await clientDbConnection.query(`
+        //     CREATE TABLE company_info (
+        //         id SERIAL PRIMARY KEY,
+        //         logo BYTEA,
+        //         company_name VARCHAR(255) NOT NULL,
+        //         primary_color VARCHAR(7) NOT NULL,
+        //         secondary_color VARCHAR(7) NOT NULL,
+        //         text_light VARCHAR(7),
+        //         text_dark VARCHAR(7),
+        //         company_address TEXT NOT NULL,
+        //         email_address VARCHAR(255) UNIQUE,
+        //         phone_number VARCHAR(15) UNIQUE,
+        //         company_description TEXT
+        //     );
+        // `);
+        // console.log(`Table 'company_info' created in database ${databaseName}.`);
 
         return result.rows[0];
     } catch (error) {
