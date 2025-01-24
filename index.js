@@ -7,6 +7,7 @@ const testRoutes = require("./src/routes/testRoutes");
 const settingsRoutes = require("./src/routes/settingsRoutes");
 const productsRoutes = require("./src/routes/productsRoutes");
 const userRoutes = require("./src/routes/userRoutes");
+const bookingRoutes = require("./src/routes/bookingRoutes");
 const { authenticateToken } = require("./src/middlewares/authMiddleware");
 const dbMiddleware = require("./src/middlewares/dbMiddleware");
 
@@ -24,6 +25,7 @@ app.use("/test", authenticateToken, dbMiddleware, testRoutes);
 app.use("/settings", authenticateToken, dbMiddleware, settingsRoutes);
 app.use("/products", authenticateToken, dbMiddleware, productsRoutes);
 app.use("/users", authenticateToken, dbMiddleware, userRoutes);
+app.use("/bookings", authenticateToken, dbMiddleware, bookingRoutes);
 
 // Error handling middleware
 // app.use(errorHandler);
