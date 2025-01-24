@@ -4,6 +4,7 @@ const {
   addProduct,
   fetchFilters,
   getFilteredProducts,
+  getProductById,
   searchProducts,
   deleteProduct,
   updateProduct
@@ -11,8 +12,9 @@ const {
 
 router.post("/", addProduct);
 router.get("/", searchProducts);
+router.get("/:productId", getProductById);
 router.delete("/:productId", deleteProduct);
-router.put("/:product_id", updateProduct);
+router.put("/:productId", updateProduct);
 router.get("/filters", fetchFilters);
 router.get("/filtered-products", getFilteredProducts);
 

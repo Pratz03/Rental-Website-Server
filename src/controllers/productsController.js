@@ -2,11 +2,12 @@ const {
   getProductFields,
   createProductsTable,
   insertProduct,
+  getProductById,
   fetchFilters,
   getFilteredProducts,
   searchProducts,
   deleteProduct,
-  updateProduct
+  updateProduct,
 } = require("../models/productsModel");
 
 exports.addProduct = async (req, res) => {
@@ -40,15 +41,34 @@ exports.addProduct = async (req, res) => {
   }
 };
 
-exports.fetchFilters = async (req, res) => {
+exports.getProductById = async (req, res) => {
+  const { productId } = req.params; // Extract user_id from path parameters
+
   try {
-    const filters = await fetchFilters(req.db);
-    res.status(200).json({ filters });
+    if (!productId) {
+      return res.status(400).json({
+        message: "Error: product_id is required.",
+      });
+    }
+
+    const result = await getProductById(req.db, productId);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: "Product not found.",
+      });
+    }
+
+    res.status(200).json({
+      message: "Product fetched successfully.",
+      user: result.rows[0],
+    });
   } catch (error) {
-    console.error("Error fetching filters:", error);
-    res
-      .status(500)
-      .json({ message: "Error fetching filters.", error: error.message });
+    console.error("Error fetching product by ID:", error);
+    res.status(500).json({
+      message: "Error fetching product.",
+      error: error.message,
+    });
   }
 };
 
@@ -118,10 +138,10 @@ exports.deleteProduct = async (req, res) => {
 
 exports.updateProduct = async (req, res) => {
   try {
-    const { product_id } = req.params; // Fetch product ID from route params
+    const { product_id: productId } = req.params; // Fetch product ID from route params
     const updateData = req.body; // Data to update comes from the request body
 
-    if (!product_id) {
+    if (!productId) {
       return res.status(400).json({ message: "Product ID is required." });
     }
 
@@ -130,7 +150,7 @@ exports.updateProduct = async (req, res) => {
     }
 
     // Update the product
-    const updatedProduct = await updateProduct(req.db, product_id, updateData);
+    const updatedProduct = await updateProduct(req.db, productId, updateData);
 
     res.status(200).json({
       message: "Product updated successfully.",
@@ -145,3 +165,14 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
+exports.fetchFilters = async (req, res) => {
+  try {
+    const filters = await fetchFilters(req.db);
+    res.status(200).json({ filters });
+  } catch (error) {
+    console.error("Error fetching filters:", error);
+    res
+      .status(500)
+      .json({ message: "Error fetching filters.", error: error.message });
+  }
+};

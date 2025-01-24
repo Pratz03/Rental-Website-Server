@@ -53,77 +53,13 @@ exports.insertProduct = async (dbClient, productData) => {
   }
 };
 
-exports.fetchFilters = async (dbClient) => {
+exports.getProductById = async (dbClient, productId) => {
   try {
-    const excludedColumns = [
-      "product_id",
-      "product_name",
-      "image",
-      "description",
-      "booking_status",
-    ];
-
-    // Fetch column information dynamically
-    const columnQuery = `
-            SELECT column_name, data_type
-            FROM information_schema.columns
-            WHERE table_name = 'products_table'
-              AND column_name NOT IN (${excludedColumns
-                .map((col) => `'${col}'`)
-                .join(", ")});
-        `;
-
-    const columnInfo = await dbClient.query(columnQuery);
-    const filters = [];
-
-    // Iterate over columns and fetch unique values and range if numeric
-    for (const column of columnInfo.rows) {
-      const { column_name, data_type } = column;
-
-      if (
-        ["integer", "numeric", "real", "double precision"].includes(data_type)
-      ) {
-        const numericQuery = `
-                    SELECT
-                        array_agg(DISTINCT ${column_name}) AS unique_values,
-                        MIN(${column_name}) AS min_value,
-                        MAX(${column_name}) AS max_value
-                    FROM products_table;
-                `;
-
-        const result = await dbClient.query(numericQuery);
-        const { unique_values, min_value, max_value } = result.rows[0];
-
-        filters.push({
-          column_name,
-          data_type,
-          unique_values,
-          min_value,
-          max_value,
-        });
-      } else {
-        const uniqueQuery = `
-                    SELECT array_agg(DISTINCT ${column_name}) AS unique_values
-                    FROM products_table;
-                `;
-
-        const result = await dbClient.query(uniqueQuery);
-        const { unique_values } = result.rows[0];
-
-        filters.push({
-          column_name,
-          data_type,
-          unique_values,
-        });
-      }
-    }
-
-    return filters;
+    const query = "SELECT * FROM products_table WHERE product_id = $1";
+    const values = [productId];
+    return await dbClient.query(query, values);
   } catch (error) {
-    console.error("Error fetching filters:", error);
-    res
-      .status(500)
-      .json({ message: "Error fetching filters.", error: error.message });
+    throw new Error("Error searching product: " + error.message);
   }
 };
 
@@ -254,5 +190,79 @@ exports.updateProduct = async (dbClient, productId, updateData) => {
     return result.rows[0];
   } catch (error) {
     throw new Error("Error updating product: " + error.message);
+  }
+};
+
+exports.fetchFilters = async (dbClient) => {
+  try {
+    const excludedColumns = [
+      "product_id",
+      "product_name",
+      "image",
+      "description",
+      "booking_status",
+    ];
+
+    // Fetch column information dynamically
+    const columnQuery = `
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'products_table'
+              AND column_name NOT IN (${excludedColumns
+                .map((col) => `'${col}'`)
+                .join(", ")});
+        `;
+
+    const columnInfo = await dbClient.query(columnQuery);
+    const filters = [];
+
+    // Iterate over columns and fetch unique values and range if numeric
+    for (const column of columnInfo.rows) {
+      const { column_name, data_type } = column;
+
+      if (
+        ["integer", "numeric", "real", "double precision"].includes(data_type)
+      ) {
+        const numericQuery = `
+                    SELECT
+                        array_agg(DISTINCT ${column_name}) AS unique_values,
+                        MIN(${column_name}) AS min_value,
+                        MAX(${column_name}) AS max_value
+                    FROM products_table;
+                `;
+
+        const result = await dbClient.query(numericQuery);
+        const { unique_values, min_value, max_value } = result.rows[0];
+
+        filters.push({
+          column_name,
+          data_type,
+          unique_values,
+          min_value,
+          max_value,
+        });
+      } else {
+        const uniqueQuery = `
+                    SELECT array_agg(DISTINCT ${column_name}) AS unique_values
+                    FROM products_table;
+                `;
+
+        const result = await dbClient.query(uniqueQuery);
+        const { unique_values } = result.rows[0];
+
+        filters.push({
+          column_name,
+          data_type,
+          unique_values,
+        });
+      }
+    }
+
+    return filters;
+  } catch (error) {
+    console.error("Error fetching filters:", error);
+    res
+      .status(500)
+      .json({ message: "Error fetching filters.", error: error.message });
   }
 };
