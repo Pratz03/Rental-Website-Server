@@ -1,4 +1,6 @@
 exports.createUserTable = async (dbClient) => {
+  console.log("userrrrrrrrrrrr");
+  
   try {
     const createTableQuery = `
         CREATE TABLE IF NOT EXISTS user_table (
@@ -22,6 +24,8 @@ exports.createUserTable = async (dbClient) => {
 // Model to insert user
 exports.insertUser = async (dbClient, userData) => {
   try {
+    console.log(">>>>", userData);
+    
     const {
       username,
       password,
@@ -58,6 +62,8 @@ exports.insertUser = async (dbClient, userData) => {
 
 // Model to search users in the database
 exports.getAndSearchUsers = async (dbClient, searchValue) => {
+  console.log(">>>>>", dbClient);
+  
   try {
     // Fetch all column names dynamically except excluded columns
     const columnQuery = `
@@ -117,7 +123,6 @@ exports.updateUser = async (dbClient, userId, updateFields) => {
   const keys = Object.keys(updateFields);
   const values = Object.values(updateFields);
   const setClauses = keys.map((key, index) => `${key} = $${index + 1}`);
-  console.log("--------", updateFields, "  ", keys, "  ", values, "  ", setClauses);
 
   const query = `
       UPDATE user_table
@@ -127,5 +132,5 @@ exports.updateUser = async (dbClient, userId, updateFields) => {
     `;
 
   // Add user_id to the values for WHERE clause
-  return await dbClient.query(query, [...values, userId]);
+  return await dbClient.dbConnection.query(query, [...values, userId]);
 };

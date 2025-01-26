@@ -8,47 +8,53 @@ const {
 // This file can be used to handle additional login-related DB interaction
 // Currently, it's very minimal because we are focused on JWT token handling.
 
-exports.loginClient = async (username, password) => {
-  let clientDbConnection;
+exports.login = async (dbClient, username, password) => {
+  console.log("----", dbClient);
+  
+  // let clientDbConnection;
   try {
     // Fetch the client by username
-    const clientResult = await pool.query(
-      "SELECT * FROM clients WHERE client_username = $1 AND client_password = $2",
+    const authResult = await dbClient.dbConnection.query(
+      "SELECT * FROM user_table WHERE username = $1 AND password = $2",
       [username, password]
     );
 
-    if (clientResult.rows.length === 0) {
+    if (authResult.rows.length === 0) {
       // Client not found
       throw new Error("Invalid username or password.");
     }
 
     // Get client information (ensure password matches using bcrypt or plain comparison)
-    const client = clientResult.rows[0];
-    console.log(client);
+    const result = authResult.rows[0];
+    console.log(result);
 
     if (
-      client.client_username !== username &&
-      client.client_password !== password
+      result.username !== username &&
+      result.password !== password
     ) {
       throw new Error("Invalid username or password.");
     }
 
-    clientDbConnection = createClientDbConnection(client.client_database_name);
-    await clientDbConnection.connect();
+    // clientDbConnection = createClientDbConnection(result.client_database_name);
+    // await clientDbConnection.connect();
+
+    // const authData = {
+    //   user_id: result.user_id,
+    //   database: 
+    // }
 
     //jwt authentication
-    const accessToken = generateAccessToken(client.client_id);
-    const refreshToken = generateRefreshToken(client.client_id);
+    const accessToken = generateAccessToken(result.user_id, dbClient.name);
+    const refreshToken = generateRefreshToken(result.user_id, dbClient.name);
 
     // For now, let's just close the connection after logging in.
-    await clientDbConnection.end();
+    // await clientDbConnection.end();
 
     // Return success or any necessary info (exclude password for security reasons)
     console.log("access", accessToken);
     return {
-      clientId: client.client_id,
-      username: client.client_username,
-      databaseName: client.client_database_name,
+      clientId: result.user_id,
+      username: result.username,
       accessToken: accessToken,
       refreshToken: refreshToken,
     };
@@ -58,12 +64,12 @@ exports.loginClient = async (username, password) => {
   }
 };
 
-exports.generateAccessToken = (client) => {
-  return jwt.sign(client, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: "15s",
-  });
-};
+// exports.generateAccessToken = (client) => {
+//   return jwt.sign(client, process.env.ACCESS_TOKEN_SECRET, {
+//     expiresIn: "15s",
+//   });
+// };
 
-exports.generateRefreshToken = (client) => {
-  return jwt.sign(client, process.env.REFRESH_TOKEN_SECRET);
-};
+// exports.generateRefreshToken = (client) => {
+//   return jwt.sign(client, process.env.REFRESH_TOKEN_SECRET);
+// };

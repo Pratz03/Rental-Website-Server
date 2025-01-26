@@ -1,9 +1,12 @@
 const { pool, createClientDbConnection } = require("../db/db");
 const { getDatabase } = require("../services/dbService");
 
-const dbMiddleware = async (req, res, next) => {
+const   dbConnectionMiddleware = async (req, res, next) => {
   try {
-    // const clientId = req.client; // Extracted from token by authenticateToken÷
+    const loginData = req.client; // Extracted from token by authenticateToken
+
+    // console.log("----", loginData.dbName);
+    
 
     // const result = await pool.query(
     //     "SELECT client_database_name FROM clients WHERE client_id = $1",
@@ -16,21 +19,18 @@ const dbMiddleware = async (req, res, next) => {
 
     // const { client_database_name: dbName } = result.rows[0];
 
-    const tenantId = req.headers["tenant-id"];
+    // const tenantId = req.headers["tenant-id"];
 
-    if (!tenantId) {
-      return res.status(400).json({ error: "Tenant ID is missing in headers" });
-    }
+    // if (!tenantId) {
+    //   return res.status(400).json({ error: "Tenant ID is missing in headers" });
+    // }
 
-    const dbName = getDatabase(tenantId);
-    const clientDbConnection = createClientDbConnection(dbName);
+    // const dbName = getDatabase(tenantId);
+    const clientDbConnection = createClientDbConnection(loginData.dbName);
 
     // Attach database connection to the request
     // req.db = clientDbConnection;
-    req.db = {
-        name: dbName,
-        dbConnection: clientDbConnection
-    }
+    req.db = clientDbConnection
 
     // Open database connection
     await clientDbConnection.connect();
@@ -41,4 +41,4 @@ const dbMiddleware = async (req, res, next) => {
   }
 };
 
-module.exports = dbMiddleware;
+module.exports = dbConnectionMiddleware;

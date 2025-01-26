@@ -3,21 +3,23 @@ const authModel = require("../models/authModel");
 
 let refreshTokens = [];  // Store active refresh tokens temporarily (can be stored in DB)
 
-exports.clientLogin = async (req, res) => {
+exports.login = async (req, res) => {
     try {
-        const { client_username, client_password } = req.body;
-        const clientData = await authModel.loginClient(client_username, client_password);
+        const { username, password } = req.body;
+        console.log(",,,,,", req.db);
+        
+        const loginData = await authModel.login(req.db, username, password);
         
         // Store the refresh token
-        refreshTokens.push(clientData.refreshToken);
+        refreshTokens.push(loginData.refreshToken);
 
         res.status(200).json({
             message: 'Login successful',
-            clientId: clientData.clientId,
-            username: clientData.username,
-            databaseName: clientData.databaseName,
-            accessToken: clientData.accessToken,
-            refreshToken: clientData.refreshToken,
+            clientId: loginData.clientId,
+            username: loginData.username,
+            databaseName: loginData.databaseName,
+            accessToken: loginData.accessToken,
+            refreshToken: loginData.refreshToken,
         });
     } catch (error) {
         res.status(400).json({ message: error.message || 'Something went wrong during login.' });
