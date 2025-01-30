@@ -9,6 +9,7 @@ const {
 } = require("../services/authService");
 const { createUserTable, insertUser } = require("../models/userModel");
 const { getDatabase } = require("../services/dbService");
+const { createTableAndInsertSettings } = require("./settingsModel");
 
 exports.addClient = async (username, password, databaseName) => {
   let adminClient, clientDbConnection;
@@ -57,6 +58,19 @@ exports.addClient = async (username, password, databaseName) => {
       address: "Address",
       role: "admin",
     });
+
+    await createTableAndInsertSettings({
+        company_name: "",
+        primary_color: "#6e62e5",
+        secondary_color: "#4858a0",
+        text_light: "#ffffff",
+        text_dark: "#333333",
+        company_address: "",
+        email_address: "",
+        phone_number: "",
+        company_description: "",
+        product_fields: "",
+    },clientDbConnection);
 
     return result.rows[0];
   } catch (error) {
