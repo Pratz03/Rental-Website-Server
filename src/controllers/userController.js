@@ -9,6 +9,7 @@ const {
 
 exports.addUser = async (req, res) => {
   const {
+    full_name,
     username,
     password,
     profile_photo,
@@ -21,6 +22,7 @@ exports.addUser = async (req, res) => {
 
   // Ensure all required fields are present
   if (
+    !full_name ||
     !username ||
     !password ||
     !phone ||
@@ -39,6 +41,7 @@ exports.addUser = async (req, res) => {
 
     // Call the model to insert the user
     const result = await insertUser(req.db, {
+      full_name,
       username,
       password,
       profile_photo,

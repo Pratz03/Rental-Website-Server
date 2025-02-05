@@ -49,6 +49,7 @@ exports.addClient = async (username, password, databaseName) => {
 
     await createUserTable(clientDbConnection);
     await insertUser(clientDbConnection, {
+      full_name: "Example Name",
       username: username,
       password: password,
       profile_photo: "",

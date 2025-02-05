@@ -5,6 +5,7 @@ exports.createUserTable = async (dbClient) => {
     const createTableQuery = `
         CREATE TABLE IF NOT EXISTS user_table (
           user_id SERIAL PRIMARY KEY,
+          full_name TEXT NOT NULL,
           username TEXT UNIQUE NOT NULL,
           password TEXT NOT NULL,
           profile_photo TEXT,
@@ -27,6 +28,7 @@ exports.insertUser = async (dbClient, userData) => {
     console.log(">>>>", userData);
     
     const {
+      full_name,
       username,
       password,
       profile_photo,
@@ -38,13 +40,14 @@ exports.insertUser = async (dbClient, userData) => {
     } = userData;
     const query = `
         INSERT INTO user_table (
-          username, password, profile_photo, phone, email, city, address, role
+          full_name, username, password, profile_photo, phone, email, city, address, role
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING *;
       `;
 
     const values = [
+      full_name,
       username,
       password,
       profile_photo,
