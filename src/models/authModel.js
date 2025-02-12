@@ -55,6 +55,7 @@ exports.login = async (dbClient, username, password) => {
     return {
       clientId: result.user_id,
       username: result.username,
+      role: result.role,
       accessToken: accessToken,
       refreshToken: refreshToken,
     };

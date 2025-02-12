@@ -16,7 +16,7 @@ exports.createUserTable = async (dbClient) => {
           role TEXT NOT NULL
         );
       `;
-    await dbClient.query(createTableQuery);
+    await dbClient.dbConnection.query(createTableQuery);
   } catch (error) {
     throw new Error("Error creating user table: " + error.message);
   }
@@ -57,9 +57,11 @@ exports.insertUser = async (dbClient, userData) => {
       address,
       role,
     ];
-    return await dbClient.query(query, values);
+    return await dbClient.dbConnection.query(query, values);
   } catch (error) {
-    throw new Error("Error inserting user data: " + error.message);
+    console.log("......", error);
+    
+    throw error;
   }
 };
 

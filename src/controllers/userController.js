@@ -56,18 +56,21 @@ exports.addUser = async (req, res) => {
       user: result.rows[0],
     });
   } catch (error) {
+    console.log(">>>>>", error);
+
     if (error.code === "23505") {
-      // Unique violation code in PostgreSQL
+      // Unique violation code in Postgr  eSQL
       return res.status(409).json({
         message:
           "Conflict: A user with the same username, phone, or email already exists.",
         error: error.detail,
+        key: error.constraint
       });
     }
 
     res.status(500).json({
       message: "Error adding user.",
-      error: error.message,
+      error: error,
     });
   }
 };

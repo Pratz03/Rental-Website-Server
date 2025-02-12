@@ -17,7 +17,7 @@ exports.login = async (req, res) => {
             message: 'Login successful',
             clientId: loginData.clientId,
             username: loginData.username,
-            databaseName: loginData.databaseName,
+            role: loginData.role,
             accessToken: loginData.accessToken,
             refreshToken: loginData.refreshToken,
         });

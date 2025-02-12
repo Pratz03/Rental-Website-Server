@@ -25,7 +25,7 @@ app.use("/auth", dbMiddleware, authRoutes); // Auth routes (login & token refres
 app.use("/test", authenticateToken, dbConnectionMiddleware, testRoutes);
 app.use("/settings", authenticateToken, dbConnectionMiddleware, settingsRoutes);
 app.use("/products", authenticateToken, dbConnectionMiddleware, productsRoutes);
-app.use("/users", authenticateToken, dbConnectionMiddleware, userRoutes);
+app.use("/users", userRoutes);
 app.use("/bookings", authenticateToken, dbConnectionMiddleware, bookingRoutes);
 
 // Error handling middleware
