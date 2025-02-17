@@ -12,7 +12,8 @@ exports.getProductFields = async (dbClient) => {
 exports.createProductsTable = async (dbClient, productFields) => {
   try {
     let createTableQuery = `CREATE TABLE IF NOT EXISTS products_table (
-            product_id SERIAL PRIMARY KEY`; // Unique product ID
+            product_id SERIAL PRIMARY KEY,
+            booking_status JSONB`; // Unique product ID
 
     // Dynamically add columns based on product fields
     productFields.forEach((field) => {

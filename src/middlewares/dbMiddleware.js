@@ -22,6 +22,9 @@ const dbMiddleware = async (req, res, next) => {
       return res.status(400).json({ error: "Tenant ID is missing in headers" });
     }
 
+    console.log(".......", tenantId);
+    
+
     const dbName = getDatabase(tenantId);
     const clientDbConnection = createClientDbConnection(dbName);
 
