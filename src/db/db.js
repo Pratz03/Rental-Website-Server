@@ -6,6 +6,7 @@ const pool = new Pool({
     host: "localhost",
     port: 5432,
     database: "client_db", // Main database for clients table
+    max: 20, // Set the maximum number of connections
 });
 
 // Function to create a client for administrative operations
@@ -16,6 +17,7 @@ const createAdminClient = () => {
         host: "localhost",
         port: 5432,
         database: "postgres", // Default connection for administrative operations
+        max: 20, // Set the maximum number of connections
     });
 };
 
@@ -27,6 +29,7 @@ const createClientDbConnection = (databaseName) => {
         host: "localhost",
         port: 5432,
         database: databaseName, // Connect to client-specific database
+        max: 20, // Set the maximum number of connections
     });
 };
 

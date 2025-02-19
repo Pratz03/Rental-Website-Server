@@ -12,10 +12,10 @@ const {
 
 router.post("/", addProduct);
 router.get("/", searchProducts);
+router.get("/filtered-products", getFilteredProducts);
 router.get("/:productId", getProductById);
 router.delete("/:productId", deleteProduct);
 router.put("/:productId", updateProduct);
 router.get("/filters", fetchFilters);
-router.get("/filtered-products", getFilteredProducts);
 
 module.exports = router;

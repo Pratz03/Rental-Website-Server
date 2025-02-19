@@ -6,12 +6,14 @@ const {
   getBookingById,
   getBookingByUserId,
   getTotalBookings,
-  getMostBookedProduct
+  getMostBookedProduct,
+  getBookingsByDate
 } = require("../controllers/bookingController");
 
 router.post("/", addBooking);
 router.get("/", getBookings);
 router.get("/most-booked-product", getMostBookedProduct);
+router.get("/bookings-today", getBookingsByDate);
 router.get("/total-count", getTotalBookings);
 router.get("/:id", getBookingById);
 router.get("/user-bookings/:id", getBookingByUserId);

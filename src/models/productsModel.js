@@ -66,6 +66,7 @@ exports.getProductById = async (dbClient, productId) => {
 
 exports.getFilteredProducts = async (dbClient, filters) => {
   try {
+    console.log(">>>>>>>>>>>>>>>>")
     const conditions = [];
     const values = [];
     let index = 1;
@@ -96,6 +97,8 @@ exports.getFilteredProducts = async (dbClient, filters) => {
     const whereClause =
       conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
     const query = `SELECT * FROM products_table ${whereClause}`;
+
+    console.log("+++++++++++++++++++", query, values)
 
     const { rows } = await dbClient.query(query, values);
     return rows;

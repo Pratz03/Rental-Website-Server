@@ -1,6 +1,6 @@
 exports.createUserTable = async (dbClient) => {
   console.log("userrrrrrrrrrrr");
-  
+
   try {
     const createTableQuery = `
         CREATE TABLE IF NOT EXISTS user_table (
@@ -26,7 +26,7 @@ exports.createUserTable = async (dbClient) => {
 exports.insertUser = async (dbClient, userData) => {
   try {
     console.log(">>>>", userData);
-    
+
     const {
       full_name,
       username,
@@ -43,7 +43,7 @@ exports.insertUser = async (dbClient, userData) => {
           full_name, username, password, profile_photo, phone, email, city, address, role
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        RETURNING *;
+        RETURNING *, created_at;
       `;
 
     const values = [
@@ -60,7 +60,7 @@ exports.insertUser = async (dbClient, userData) => {
     return await dbClient.dbConnection.query(query, values);
   } catch (error) {
     console.log("......", error);
-    
+
     throw error;
   }
 };
@@ -68,7 +68,7 @@ exports.insertUser = async (dbClient, userData) => {
 // Model to search users in the database
 exports.getAndSearchUsers = async (dbClient, searchValue) => {
   console.log(">>>>>", dbClient);
-  
+
   try {
     // Fetch all column names dynamically except excluded columns
     const columnQuery = `
@@ -138,4 +138,16 @@ exports.updateUser = async (dbClient, userId, updateFields) => {
 
   // Add user_id to the values for WHERE clause
   return await dbClient.dbConnection.query(query, [...values, userId]);
+};
+
+exports.totalUser = async (dbClient) => {
+  try {
+    const total_user = await dbClient.query("SELECT * FROM user_table");
+    const total_user_today = await dbClient.query(
+      "SELECT * FROM user_table WHERE DATE(created_at) = CURRENT_DATE"
+    );
+    return { total_user: total_user.rows.length, total_user_today: total_user_today.rows.length };
+  } catch (error) {
+    throw new Error("Error searching users: " + error.message);
+  }
 };

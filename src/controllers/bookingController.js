@@ -6,33 +6,19 @@ const {
   getBookingById,
   getBookingByUserId,
   getMonthBookings,
-  getTodayBookings,
+  getBookingsByDate,
   getMostBookedProduct
 } = require("../models/bookingModel");
 
 exports.addBooking = async (req, res) => {
   try {
-    const {
-      booking_date,
-      pickup_date,
-      drop_date,
-      product_id,
-      user_id,
-      payment_status,
-    } = req.body;
+    const bookings_data = req.body;
 
     const tableCreated = await createBookingTable(req.db);
 
-    const result = await addBooking(req.db, {
-      booking_date,
-      pickup_date,
-      drop_date,
-      product_id,
-      user_id,
-      payment_status,
-    });
+    const result = await addBooking(req.db, bookings_data);
 
-    res.json({ message: "Data Inserted", data: result.rows[0] });
+    res.json({ message: "Data Inserted", data: result });
   } catch (error) {
     res.json({ error: error.message });
   }
@@ -106,11 +92,19 @@ exports.getMostBookedProduct = async (req, res) => {
   try {
     const result = await getMostBookedProduct(req.db);
 
-    res.json({
-      message: "Fetched bookings",
-      product_id: result.rows[0].product_id,
-      count: result.rows[0].count_product
-    });
+    res.json(result);
+  } catch (error) {
+    res.json({ Error: error.message });
+  }
+}
+
+exports.getBookingsByDate = async (req, res) => {
+  console.log(">>>>>>>>>");
+  
+  try {
+    const result = await getBookingsByDate(req.db);
+
+    res.json(result);
   } catch (error) {
     res.json({ Error: error.message });
   }

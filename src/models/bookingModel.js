@@ -19,37 +19,47 @@ exports.createBookingTable = async (dbClient) => {
   }
 };
 
-exports.addBooking = async (dbClient, bookingData) => {
+exports.addBooking = async (dbClient, bookings) => {
   try {
-    const {
-      booking_date,
-      pickup_date,
-      drop_date,
-      product_id,
-      user_id,
-      payment_status,
-    } = bookingData;
+    if (!Array.isArray(bookings) || bookings.length === 0) {
+      throw new Error("Invalid input: bookings should be a non-empty array.");
+    }
 
-    const values = [
-      booking_date,
-      pickup_date,
-      drop_date,
-      product_id,
-      user_id,
-      payment_status,
-    ];
+    // Extract values dynamically
+    const values = [];
+    const placeholders = bookings
+      .map((_, index) => {
+        const offset = index * 6; // 6 columns per booking
+        return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6})`;
+      })
+      .join(", ");
 
-    const insertQuery = `INSERT INTO 
-      booking_table (booking_date, pickup_date, drop_date, product_id, user_iD, payment_statuS) 
-      VALUES($1, $2, $3, $4, $5, $6) RETURNING *`;
+    bookings.forEach((booking) => {
+      values.push(
+        booking.booking_date,
+        booking.pickup_date,
+        booking.drop_date,
+        booking.product_id,
+        booking.user_id,
+        booking.payment_status
+      );
+    });
 
-    const result = dbClient.query(insertQuery, values);
+    const insertQuery = `
+      INSERT INTO booking_table 
+      (booking_date, pickup_date, drop_date, product_id, user_id, payment_status) 
+      VALUES ${placeholders} 
+      RETURNING *, created_at;
+    `;
 
-    return result;
+    const result = await dbClient.query(insertQuery, values);
+
+    return result.rows;
   } catch (error) {
     throw error;
   }
 };
+
 
 exports.getBookings = async (dbClient) => {
   try {
@@ -94,32 +104,71 @@ exports.getMonthBookings = async (dbClient) => {
   }
 };
 
-exports.getTodayBookings = async (dbClient) => {
+exports.getBookingsByDate = async (dbClient) => {
   try {
-    const result = await dbClient.query(`SELECT * FROM booking_table 
-      WHERE booking_date = CURRENT_DATE`);
-    return result;
+    const result = await dbClient.query(
+      `SELECT * FROM booking_table 
+       WHERE DATE(created_at) = CURRENT_DATE`
+    );
+
+    const result_month = await this.getMonthBookings(dbClient);
+
+    const total_bookings = await this.getBookings(dbClient);
+
+    if (result.rows.length === 0 || result_month.rows.length === 0) {
+      return { message: "No bookings found" };
+    }
+
+    return {
+      booking_count_today: result.rows.length,
+      booking_count_month: result_month.rows.length,
+      total_bookings: total_bookings.rows.length,
+    };
   } catch (error) {
-    throw error.message;
+    console.error("Error fetching today's bookings:", error);
+    throw error;
   }
 };
 
 exports.getMostBookedProduct = async (dbClient) => {
-  console.log(".......");
-  
   try {
-    console.log("///////");
-    
-    const result = await dbClient.query(`SELECT COUNT(product_id) AS count_product, product_id 
-      FROM booking_table 
-      GROUP BY product_id 
-      ORDER BY count_product DESC 
-      LIMIT 1`);
+    const result = await dbClient.query(
+      `SELECT COUNT(product_id) AS count_product, product_id 
+       FROM booking_table 
+       GROUP BY product_id 
+       ORDER BY count_product DESC 
+       LIMIT 1`
+    );
 
-    // const product_name = await dbClient.query(`SELECT product_name FROM products_table
-    //   WHERE product_id = $1`, [result.product_id])
-    return result;
+    if (result.rows.length === 0) {
+      return { message: "No bookings found" };
+    }
+
+    const mostBookedProductId = result.rows[0].product_id;
+    const bookingCount = result.rows[0].count_product;
+
+    const productQuery = await dbClient.query(
+      `SELECT product_name FROM products_table WHERE product_id = $1`,
+      [mostBookedProductId]
+    );
+
+    if (productQuery.rows.length === 0) {
+      return {
+        message: "Product not found",
+        product_id: mostBookedProductId,
+        booking_count: bookingCount,
+      };
+    }
+
+    const productName = productQuery.rows[0].product_name;
+
+    return {
+      product_id: mostBookedProductId,
+      product_name: productName,
+      booking_count: bookingCount,
+    };
   } catch (error) {
-    throw error.message;
+    console.error("Error fetching most booked product:", error);
+    throw error;
   }
-}
+};

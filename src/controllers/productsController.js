@@ -74,6 +74,7 @@ exports.getProductById = async (req, res) => {
 
 exports.getFilteredProducts = async (req, res) => {
   try {
+    console.log("::::::::")
     const filters = req.body.filters || {};
     const products = await getFilteredProducts(req.db, filters);
 
@@ -138,8 +139,10 @@ exports.deleteProduct = async (req, res) => {
 
 exports.updateProduct = async (req, res) => {
   try {
-    const { product_id: productId } = req.params; // Fetch product ID from route params
+    const { productId } = req.params; // Fetch product ID from route params
     const updateData = req.body; // Data to update comes from the request body
+
+    console.log(">>>", req.params, productId);
 
     if (!productId) {
       return res.status(400).json({ message: "Product ID is required." });

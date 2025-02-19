@@ -5,6 +5,7 @@ const {
   checkConflicts,
   updateUser,
   getUser,
+  totalUser
 } = require("../models/userModel");
 
 exports.addUser = async (req, res) => {
@@ -184,6 +185,18 @@ exports.updateUser = async (req, res) => {
     console.error("Error updating user:", error);
     res.status(500).json({
       message: "Error updating user.",
+      error: error.message,
+    });
+  }
+};
+
+exports.totalUser = async (req, res) => {
+  try {
+    const result = await totalUser(req.db);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching users.",
       error: error.message,
     });
   }
