@@ -5,9 +5,10 @@ const {
   getProductById,
   fetchFilters,
   getFilteredProducts,
-  searchProducts,
+  getProducts,
   deleteProduct,
   updateProduct,
+  getFilteredAndSearchedProducts
 } = require("../models/productsModel");
 
 exports.addProduct = async (req, res) => {
@@ -91,25 +92,25 @@ exports.getFilteredProducts = async (req, res) => {
   }
 };
 
-exports.searchProducts = async (req, res) => {
+exports.getProducts = async (req, res) => {
   try {
-    const { search } = req.query; // Fetch search parameter if provided
+    const { limit = 10, offset = 0 } = req.query;
 
-    // Fetch products based on search
-    const products = await searchProducts(req.db, search);
+    const products = await getProducts(req.db, parseInt(limit), parseInt(offset));
 
     res.status(200).json({
       message: "Products fetched successfully.",
       products,
     });
   } catch (error) {
-    console.error("Error in searchProducts:", error.message);
+    console.error("Error in getProducts:", error.message);
     res.status(500).json({
       message: "Error fetching products.",
       error: error.message,
     });
   }
 };
+
 
 exports.deleteProduct = async (req, res) => {
   try {
@@ -179,3 +180,29 @@ exports.fetchFilters = async (req, res) => {
       .json({ message: "Error fetching filters.", error: error.message });
   }
 };
+
+exports.getFilteredAndSearchedProducts = async (req, res) => {
+  try {
+    console.log("::::: Fetching Filtered & Searched Products :::::");
+    
+    
+    const { search } = req.query; // Get search keyword from query params
+    const { limit = 10, offset = 0 } = req.query;
+    const filters = req.body.filters || {}; // Get filters from request body
+    console.log("+++", filters, req.body)
+    // Call a common function to get products based on search & filters
+    const products = await getFilteredAndSearchedProducts(req.db, search, filters, parseInt(limit), parseInt(offset));
+
+    res.status(200).json({
+      message: "Products retrieved successfully.",
+      products,
+    });
+  } catch (error) {
+    console.error("Error fetching products:", error.message);
+    res.status(500).json({
+      message: "Error retrieving products.",
+      error: error.message,
+    });
+  }
+};
+

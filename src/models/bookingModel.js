@@ -111,19 +111,15 @@ exports.getBookingsByDate = async (dbClient) => {
        WHERE DATE(created_at) = CURRENT_DATE`
     );
 
-    const result_month = await this.getMonthBookings(dbClient);
+    // const result_month = await this.getMonthBookings(dbClient);
 
-    const total_bookings = await this.getBookings(dbClient);
+    // const total_bookings = await this.getBookings(dbClient);
 
-    if (result.rows.length === 0 || result_month.rows.length === 0) {
-      return { message: "No bookings found" };
-    }
+    // if (result.rows.length === 0 || result_month.rows.length === 0) {
+    //   return { message: "No bookings found" };
+    // }
 
-    return {
-      booking_count_today: result.rows.length,
-      booking_count_month: result_month.rows.length,
-      total_bookings: total_bookings.rows.length,
-    };
+    return result;
   } catch (error) {
     console.error("Error fetching today's bookings:", error);
     throw error;
@@ -131,6 +127,8 @@ exports.getBookingsByDate = async (dbClient) => {
 };
 
 exports.getMostBookedProduct = async (dbClient) => {
+  console.log("+++++++++");
+  
   try {
     const result = await dbClient.query(
       `SELECT COUNT(product_id) AS count_product, product_id 

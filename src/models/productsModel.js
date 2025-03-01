@@ -107,42 +107,24 @@ exports.getFilteredProducts = async (dbClient, filters) => {
   }
 };
 
-exports.searchProducts = async (dbClient, searchQuery) => {
+exports.getProducts = async (dbClient, limit, offset) => {
   try {
-    // Step 1: Fetch the dynamic column names from products_table
-    const columnsResult = await dbClient.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'products_table' 
-        AND column_name NOT IN ('product_id', 'booking_status');
-    `);
+    // Construct SQL query with LIMIT and OFFSET for pagination
+    const query = `
+      SELECT * FROM products_table 
+      ORDER BY created_at DESC 
+      LIMIT $1 OFFSET $2
+    `;
 
-    const columnNames = columnsResult.rows.map((row) => row.column_name);
-
-    if (columnNames.length === 0) {
-      throw new Error("No searchable columns found in products_table.");
-    }
-
-    // Step 2: Construct SQL based on the presence of searchQuery
-    let searchSQL = `SELECT * FROM products_table`;
-    const values = [];
-
-    if (searchQuery && searchQuery.trim() !== "") {
-      const conditions = columnNames
-        .map((column) => `${column}::TEXT ILIKE $1`) // Convert to TEXT and use case-insensitive search
-        .join(" OR ");
-      searchSQL += ` WHERE ${conditions}`;
-      values.push(`%${searchQuery}%`);
-    }
-
-    // Execute the search query
-    const result = await dbClient.query(searchSQL, values);
+    // Execute the query with limit and offset values
+    const result = await dbClient.query(query, [limit, offset]);
 
     return result.rows;
   } catch (error) {
-    throw new Error("Error searching products: " + error.message);
+    throw new Error("Error retrieving products: " + error.message);
   }
 };
+
 
 exports.deleteProduct = async (dbClient, productId) => {
   try {
@@ -205,6 +187,7 @@ exports.fetchFilters = async (dbClient) => {
       "image",
       "description",
       "booking_status",
+      "created_at"
     ];
 
     // Fetch column information dynamically
@@ -270,3 +253,72 @@ exports.fetchFilters = async (dbClient) => {
       .json({ message: "Error fetching filters.", error: error.message });
   }
 };
+
+exports.getFilteredAndSearchedProducts = async (dbClient, searchQuery, filters, limit, offset) => {
+  try {
+    console.log("::::: Fetching Filtered & Searched Products :::::");
+    console.log("Received Body:", filters);  // Debugging
+    console.log("Received Query Params:", searchQuery);
+
+    const conditions = [];
+    const values = [];
+    let index = 1;
+
+    const columnsResult = await dbClient.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'products_table' 
+        AND column_name NOT IN ('product_id', 'booking_status');
+    `);
+    const columnNames = columnsResult.rows.map((row) => row.column_name);
+
+    if (columnNames.length === 0) {
+      throw new Error("No searchable columns found in products_table.");
+    }
+
+    if (searchQuery && searchQuery.trim() !== "") {
+      const searchConditions = columnNames
+        .map((column) => `${column}::TEXT ILIKE $${index}`)
+        .join(" OR ");
+      conditions.push(`(${searchConditions})`);
+      values.push(`%${searchQuery}%`);
+      index++;
+    }
+
+    // Step 3: Handle Filters
+    for (const [key, filter] of Object.entries(filters)) {
+      if (Array.isArray(filter)) {
+        // Handle array filters with the ANY operator
+        conditions.push(`${key} = ANY($${index})`);
+        values.push(filter);
+      } else if (
+        typeof filter === "object" &&
+        filter.min !== undefined &&
+        filter.max !== undefined
+      ) {
+        // Handle range filters with BETWEEN
+        conditions.push(`${key} BETWEEN $${index} AND $${index + 1}`);
+        values.push(filter.min, filter.max);
+        index++; // Increment index for the second value
+      } else {
+        // Handle single equality filters
+        conditions.push(`${key} = $${index}`);
+        values.push(filter);
+      }
+      index++;
+    }
+
+    // Step 4: Construct Final Query
+    const whereClause =
+      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const query = `SELECT * FROM products_table ${whereClause} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+
+    console.log("Executing Query:", query, values);
+
+    const { rows } = await dbClient.query(query, values);
+    return rows;
+  } catch (error) {
+    throw new Error("Error retrieving products: " + error.message);
+  }
+};
+

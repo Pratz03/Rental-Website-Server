@@ -5,17 +5,19 @@ const {
   fetchFilters,
   getFilteredProducts,
   getProductById,
-  searchProducts,
+  getProducts ,
   deleteProduct,
-  updateProduct
+  updateProduct,
+  getFilteredAndSearchedProducts
 } = require("../controllers/productsController");
 
 router.post("/", addProduct);
-router.get("/", searchProducts);
+router.get("/", getProducts );
+router.get("/filters", fetchFilters);
+router.post("/f&s-products", getFilteredAndSearchedProducts);
 router.get("/filtered-products", getFilteredProducts);
 router.get("/:productId", getProductById);
 router.delete("/:productId", deleteProduct);
 router.put("/:productId", updateProduct);
-router.get("/filters", fetchFilters);
 
 module.exports = router;

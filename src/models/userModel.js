@@ -146,7 +146,13 @@ exports.totalUser = async (dbClient) => {
     const total_user_today = await dbClient.query(
       "SELECT * FROM user_table WHERE DATE(created_at) = CURRENT_DATE"
     );
-    return { total_user: total_user.rows.length, total_user_today: total_user_today.rows.length };
+    const total_user_month = await dbClient.query(`SELECT * FROM user_table 
+      WHERE EXTRACT(MONTH FROM created_at) = EXTRACT(MONTH FROM CURRENT_DATE)`);
+    return {
+      total_user: total_user.rows.length,
+      total_user_today: total_user_today.rows.length,
+      total_user_month: total_user_month.rows.length
+    };
   } catch (error) {
     throw new Error("Error searching users: " + error.message);
   }

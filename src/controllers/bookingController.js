@@ -7,7 +7,7 @@ const {
   getBookingByUserId,
   getMonthBookings,
   getBookingsByDate,
-  getMostBookedProduct
+  getMostBookedProduct,
 } = require("../models/bookingModel");
 
 exports.addBooking = async (req, res) => {
@@ -72,13 +72,12 @@ exports.getBookingByUserId = async (req, res) => {
 exports.getTotalBookings = async (req, res) => {
   try {
     const result = await getBookings(req.db);
-    const bookings_today = await getTodayBookings(req.db);
+    const bookings_today = await getBookingsByDate(req.db);
     const bookings_month = await getMonthBookings(req.db);
-
+    
     res.json({
-      message: "Fetched bookings",
       total_bookings: result.rows.length,
-      bookings_today: bookings_today.rows.length,
+      bookings_today: bookings_today.rows.length === 0 ? 0 : bookings_today.rows.length,
       bookings_month: bookings_month.rows.length
     });
   } catch (error) {
@@ -87,11 +86,11 @@ exports.getTotalBookings = async (req, res) => {
 };
 
 exports.getMostBookedProduct = async (req, res) => {
-  console.log(">>>>>>>>>");
+  
   
   try {
     const result = await getMostBookedProduct(req.db);
-
+    console.log(">>>>>>>>>");
     res.json(result);
   } catch (error) {
     res.json({ Error: error.message });
